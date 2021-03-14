@@ -1,0 +1,10 @@
+venv
+train_img
+train2017
+val_img
+*.zip
+__pycache__
+.vscode
+backups
+annotations
+foot_annotations
