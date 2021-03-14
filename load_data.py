@@ -75,12 +75,24 @@ if __name__ == "__main__":
    
     train_dir =  'train_img'
     train_ann = "ann/train_image.json"
-    train_count = 50
+    train_count = 10
 
     val_dir =  'val_img'
     val_ann = "ann/val_image.json"
     val_count = 300
 #%%
-    x, anns = load_dataset(val_dir, val_ann, val_count)
+    X_train, anns = load_dataset(train_dir, train_ann, train_count)
 #%%
-    y = generate_heatmaps(anns, OUTPUT_SHAPE)
+    y_train = generate_heatmaps(anns, OUTPUT_SHAPE)
+#%%
+    def visualize(x, y, pred):
+        plt.imshow(x)
+        plt.show()
+        plt.imshow(y[:,:,0])
+        plt.show()
+        plt.imshow(pred[:,:,0])
+        plt.show()
+    i=1
+    visualize(X_train[i], y_train[i], y_train[i])
+
+# %%
