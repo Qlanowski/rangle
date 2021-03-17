@@ -9,19 +9,10 @@ import matplotlib.pyplot as plt
 from const import SIGMA, INPUT_SHAPE,OUTPUT_SHAPE
 
 def load_dataset(img_dir, ann_file, count):
-    img_files = glob.glob(f"{img_dir}/*.jpg")[:count]
-    ids = set(map(lambda f: int(os.path.split(f)[-1].split(".")[0]), img_files))
-
     with open(ann_file) as content:
         json_ann = json.load(content)
 
-    anns = list(filter(lambda a:a['image_id'] in ids, json_ann))
-    anns = sorted(anns, key=lambda a: a['image_id'])
-    #   y = tf.constant(list(map(lambda x: np.array(x['people'][0]['keypoints']).reshape(-1,3), anns )),dtype=tf.float32)
-    #   sigma = np.array([0.107,0.089,0.107,0.089,0.107,0.089,0.107,0.089,0.107,0.089,0.107,0.089,0.107,0.089,0.107,0.089,0.107,0.089,0.107,0.089,0.107,0.089,0.107])*5
-    #   sigma = tf.constant(sigma, dtype=tf.float32)
-    #   heatmaps = generate_heatmaps(tf.constant(y), [224, 224],[56,56,23],sigma)
-
+    anns = json_ann[:count]
 
     load_img = lambda path: tf.keras.preprocessing.image.load_img(
         path, grayscale=False, color_mode='rgb', target_size=(224,224),
@@ -29,10 +20,11 @@ def load_dataset(img_dir, ann_file, count):
     )
     i=0
     imgs = []
-    print(len(img_files))
-    for path in img_files:
+    for ann in anns:
         i+=1
-        print(i)
+        name = str(ann['image_id'])
+        file_name = f'{name.zfill(12)}.jpg'
+        path = os.path.join(img_dir, file_name)
         imgs.append(np.asarray(load_img(path)))
     imgs = np.asarray(imgs)
     imgs = imgs/255
