@@ -60,7 +60,7 @@ def generate_heatmaps(anns, output_shape):
             kp = np.array(p["keypoints"],dtype=np.float32).reshape(-1,3)
             h = h + generate_heatmap(kp, [a['height'], a['width']], output_shape)
         y[i] = h
-    return y/255.
+    return y
 
 #%%
 if __name__ == "__main__":
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         plt.show()
         plt.imshow(pred[:,:,0])
         plt.show()
-    i=1
+    i=3
     visualize(X_train[i], y_train[i], y_train[i])
 
 # %%
