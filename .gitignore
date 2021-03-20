@@ -9,3 +9,6 @@ backups
 annotations
 foot_annotations
 models
+train
+test
+val
