@@ -14,6 +14,7 @@ import load_data as ld
 from nets.simple_baseline import SimpleBaseline
 from lr_schedules import WarmupCosineDecay, WarmupPiecewise
 import cost_functions as cf
+from tfds_loader import load_ds
 # %%
 # if len(sys.argv) - 1 > 0:
 #   model_name = sys.argv[0]
@@ -21,16 +22,18 @@ import cost_functions as cf
 model_name = "200_simple"
 print(model_name)
 
-train_dir =  'train_img'
-train_ann = "ann/train_image.json"
-train_count = 5
+train_dir =  'train'
+val_dir =  'val'
+batch_size = 32
 
-val_dir =  'val_img'
-val_ann = "ann/val_image.json"
-val_count = 10
 
-X_train, anns = ld.load_dataset(val_dir, val_ann, val_count)
-y_train = ld.generate_heatmaps(anns, OUTPUT_SHAPE)
+
+# X_train, anns = ld.load_dataset(val_dir, val_ann, val_count)
+# y_train = ld.generate_heatmaps(anns, OUTPUT_SHAPE)
+train_dataset = load_ds(train_dir, batch_size, INPUT_SHAPE, OUTPUT_SHAPE)
+train_size = len(os.listdir(train_dir))
+val_dataset = load_ds(val_dir, batch_size, INPUT_SHAPE, OUTPUT_SHAPE)
+val_size = len(os.listdir(val_dir))
 
 # %%
 model = SimpleBaseline(INPUT_SHAPE)
@@ -41,7 +44,7 @@ WARMUP_FACTOR = 0.1
 EPOCHS = 20
 BATCH_SIZE = 64
 LR = 0.00025
-spe = int(np.ceil(len(X_train) / BATCH_SIZE))
+spe = int(np.ceil(train_size / BATCH_SIZE))
 
 lr = LR * BATCH_SIZE / 32
 lr_schedule = WarmupCosineDecay(
@@ -50,10 +53,8 @@ lr_schedule = WarmupCosineDecay(
             warmup_steps=WARMUP_EPOCHS * spe,
             warmup_factor=WARMUP_FACTOR)
             
-model.compile(optimizer=tf.keras.optimizers.Adam(0.0001),
-              loss=cf.mse,
-              metrics=['accuracy'])
-model.fit(x=X_train, y=y_train, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1, validation_split=0.2)
+model.compile(optimizer=tf.keras.optimizers.Adam(lr_schedule), loss=cf.mse)
+model.fit(train_dataset, epochs=EPOCHS, verbose=1, validation_data=val_dataset, steps_per_epoch=spe)
 # %%
 weights_path = f'./models/{model_name}.h5'
 model.save_weights(weights_path)
