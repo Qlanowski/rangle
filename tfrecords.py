@@ -38,12 +38,15 @@ def _int64s_feature(value):
   return tf.train.Feature(int64_list=tf.train.Int64List(value=np.array(value, dtype=np.int32).reshape(-1)))
 
 
-def serialize(image, areas, bboxes, keypoints):
+def serialize(image, height, width, image_id, areas, bboxes, keypoints):
     feature = {
         'image': _bytes_feature(image),
+        'image_id': _int64s_feature([image_id]),
         'areas': _floats_feature(areas),
         'bboxes': _floats_feature(bboxes),
-        'keypoints': _int64s_feature(keypoints)
+        'keypoints': _int64s_feature(keypoints),
+        'height': _int64s_feature([height]),
+        'width': _int64s_feature([width])
     }
     example_proto = tf.train.Example(
         features=tf.train.Features(feature=feature))
@@ -61,11 +64,17 @@ for ann in anns:
     path = os.path.join(img_dir, file_name)
     with open(path,'rb') as file:
         img = file.read()
+
+    height = ann['height']
+    width = ann['width']
     areas = list(map(lambda p: p['area'], ann['people']))
     bboxes = list(map(lambda p: p['bbox'], ann['people']))
     keypoints = list(map(lambda p: p['keypoints'], ann['people']))
 
+
     save_file = path = os.path.join(out_dir, f'{name.zfill(12)}.tfrec')
     with tf.io.TFRecordWriter(save_file) as writer:
-        data = serialize(img, areas, bboxes, keypoints)
+        data = serialize(img, height, width, name,  areas, bboxes, keypoints)
         writer.write(data)
+    if i % 100 == 0:
+        print(f'{i}/{len(anns)}')
