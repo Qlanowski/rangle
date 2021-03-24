@@ -121,8 +121,8 @@ def load_ds(train_dir, batch_size, input_shape, output_shape):
                        block_length=1,
                        num_parallel_calls=AUTO)
     ds = ds.map(lambda record: parse_record(record), num_parallel_calls=AUTO)
-    # ds = ds.cache()
-    # ds = ds.shuffle(10000).repeat()
+    ds = ds.cache()
+    ds = ds.shuffle(10000).repeat()
     ds = ds.map(lambda img_id, img, height, width, areas, bboxes, keypoints: prepro(img, height, width, keypoints, input_shape, output_shape))
     ds = ds.batch(batch_size).prefetch(AUTO)
 
