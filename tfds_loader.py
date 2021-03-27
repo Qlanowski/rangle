@@ -112,10 +112,12 @@ def parse_record(record):
     return img_id, img, height, width, areas, bboxes, keypoints
 
 
-def load_ds(train_dir, batch_size, input_shape, output_shape):
+def load_ds(data_dir, batch_size, input_shape, output_shape):
     AUTO = tf.data.experimental.AUTOTUNE
-    file_pattern = os.path.join(train_dir, '*.tfrec')
-    ds = tf.data.Dataset.list_files(file_pattern, shuffle=True)
+    # file_pattern = os.path.join(train_dir, '*.tfrec')
+    # ds = tf.data.Dataset.list_files(file_pattern, shuffle=True)
+    gcs_pattern = f'gs://rangle/tfrecords.zip/{data_dir}/*.tfrec'
+    ds = tf.data.Dataset.list_files(gcs_pattern, shuffle=True)
     ds = ds.interleave(tf.data.TFRecordDataset,
                        cycle_length=10,
                        block_length=1,
@@ -138,8 +140,9 @@ def to_image(img):
 if __name__ == "__main__":
     tf.random.set_seed(0)
     train_dir = 'train'
+    val_dir = 'val'
     batch_size = 32
-    ds = load_ds('train', batch_size, INPUT_SHAPE, OUTPUT_SHAPE)
+    ds = load_ds(val_dir, batch_size, INPUT_SHAPE, OUTPUT_SHAPE)
     # for i, (img, heatmap) in enumerate(ds):
     #     imgplot = plt.imshow(img)
     #     plt.show()
