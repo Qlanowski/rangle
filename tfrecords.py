@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 
-from const import SIGMA, INPUT_SHAPE, OUTPUT_SHAPE
+from utils.const import SIGMA, INPUT_SHAPE, OUTPUT_SHAPE
 
 # %%
 # out_dir ='train'

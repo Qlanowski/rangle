@@ -6,7 +6,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 
-from const import SIGMA, INPUT_SHAPE, OUTPUT_SHAPE
+from utils.const import SIGMA, INPUT_SHAPE, OUTPUT_SHAPE
 
 
 def load_dataset(img_dir, ann_file, count):

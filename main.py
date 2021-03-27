@@ -9,7 +9,7 @@ import cv2
 import matplotlib.pyplot as plt
 
 
-from const import SIGMA, INPUT_SHAPE,OUTPUT_SHAPE
+from utils.const import SIGMA, INPUT_SHAPE,OUTPUT_SHAPE
 import load_data as ld
 from nets.simple_baseline import SimpleBaseline
 from lr_schedules import WarmupCosineDecay, WarmupPiecewise

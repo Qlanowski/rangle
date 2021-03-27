@@ -7,16 +7,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 
-from const import SIGMA, INPUT_SHAPE, OUTPUT_SHAPE
+from utils.const import SIGMA, INPUT_SHAPE, OUTPUT_SHAPE
 
 # %%
-def visualize(img, joints, valid):
-    for i, v in enumerate(valid):
-        if v == 1:  # occluded
-            cv2.circle(img, tuple(joints[i]), 1, (0, 255, 0))
-        elif v == 2:  # visible
-            cv2.circle(img, tuple(joints[i]), 1, (0, 0, 255))
-    return img
+def get_dataset_iterator(dataset):
+    return dataset.unbatch().as_numpy_iterator()
 
 
 def generate_heatmap(kp, input_shape, output_shape):
@@ -105,12 +100,8 @@ if __name__ == "__main__":
     val_dir = 'val'
     batch_size = 32
     ds = load_ds(val_dir, batch_size, INPUT_SHAPE, OUTPUT_SHAPE)
-    # for i, (img, heatmap) in enumerate(ds):
-    #     imgplot = plt.imshow(img)
-    #     plt.show()
+   
     for i, (imgs, heatmaps) in enumerate(ds):
-    # for i, (img_id, img, height, width, areas, bboxes, keypoints) in enumerate(ds):
-    #     img, heatmaps = prepro(img, height, width, keypoints, INPUT_SHAPE, OUTPUT_SHAPE)
         for b in range(batch_size):
             img = imgs[b]
             heatmap =heatmaps[b]
@@ -120,12 +111,5 @@ if __name__ == "__main__":
             plt.show()
             imgplot = plt.imshow(heatmap[:,:,i])
             plt.show()
-        # imgplot = plt.imshow(heatmap[:,:,0])
-        # plt.show()
-        # img_with_dots = visualize(
-        #     np.uint8(img), kps[0, :, :2].numpy(), kps[0, :, -1].numpy())
-        # cv2.imshow('', cv2.cvtColor(img_with_dots, cv2.COLOR_BGR2RGB))
-        # cv2.waitKey()
-        # cv2.destroyAllWindows()
 
 # %%
