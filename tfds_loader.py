@@ -10,8 +10,6 @@ import cv2
 from const import SIGMA, INPUT_SHAPE, OUTPUT_SHAPE
 
 # %%
-
-
 def visualize(img, joints, valid):
     for i, v in enumerate(valid):
         if v == 1:  # occluded
@@ -20,28 +18,6 @@ def visualize(img, joints, valid):
             cv2.circle(img, tuple(joints[i]), 1, (0, 0, 255))
     return img
 
-
-def get_heatmap(kp, input_shape, output_shape):
-    SIGMA = 2 * output_shape[0] / 64
-    # SIGMA = 100
-    x = [i for i in range(output_shape[1])]
-    y = [i for i in range(output_shape[0])]
-    xx, yy = tf.meshgrid(x, y)
-    xx = tf.reshape(tf.dtypes.cast(xx, tf.float32), (1, *output_shape[:2], 1))
-    yy = tf.reshape(tf.dtypes.cast(yy, tf.float32), (1, *output_shape[:2], 1))
-
-    x = tf.floor(tf.reshape(kp[:, :, 0], [-1, 1, 1, output_shape[-1]])
-                 / input_shape[1] * output_shape[1] + 0.5)
-    y = tf.floor(tf.reshape(kp[:, :, 1], [-1, 1, 1, output_shape[-1]])
-                 / input_shape[0] * output_shape[0] + 0.5)
-
-    heatmap = tf.exp(-(((xx - x) / SIGMA) ** 2) / 2 - (
-        ((yy - y) / SIGMA) ** 2) / 2) * 255.
-
-    valid = tf.cast(kp[:, :, -1] > 0, tf.float32)
-    valid_mask = tf.reshape(valid, [heatmap.shape[0], 1, 1, valid.shape[-1]])
-    heatmap = heatmap*valid_mask
-    return tf.math.reduce_sum(heatmap, axis=0)
 
 def generate_heatmap(kp, input_shape, output_shape):
     SIGMA = 2 * output_shape[0] / 64
@@ -63,24 +39,6 @@ def generate_heatmap(kp, input_shape, output_shape):
     valid = tf.cast(kp[:, -1] > 0, tf.float32)
     valid_mask = tf.reshape(valid, [1, valid.shape[-1]])
     return heatmap*valid_mask
-    # SIGMA = 2 * output_shape[0] / 64
-
-    # x = [i for i in range(output_shape[1])]
-    # y = [i for i in range(output_shape[0])]
-    # xx, yy = tf.meshgrid(x, y)
-    # xx = tf.reshape(tf.dtypes.cast(xx, tf.float32), (*output_shape[:2], 1))
-    # yy = tf.reshape(tf.dtypes.cast(yy, tf.float32), (*output_shape[:2], 1))
-
-    # rx = tf.reshape(kp[:, 0], [-1, 1, output_shape[-1]])/ (input_shape[1] * output_shape[1])
-    # ry = tf.reshape(kp[:, 1], [-1, 1, output_shape[-1]])/ (input_shape[0] * output_shape[0])
-    # x = tf.floor(rx  + 0.5)
-    # y = tf.floor(ry  + 0.5)
-
-    # heatmap = tf.exp(-(((xx - x) / SIGMA) ** 2) / 2 - (((yy - y) / SIGMA) ** 2) / 2) * 255.
-
-    # valid = tf.cast(kp[:, -1] > 0, tf.float32)
-    # valid_mask = tf.reshape(valid, [heatmap.shape[0], 1, valid.shape[-1]])
-    # return heatmap*valid_mask
 
 
 def prepro(img, height, width, kp, input_shape, output_shape):
@@ -112,19 +70,23 @@ def parse_record(record):
     return img_id, img, height, width, areas, bboxes, keypoints
 
 
-def load_ds(data_dir, batch_size, input_shape, output_shape):
+def load_ds(data_dir, batch_size, input_shape, output_shape, remote=True, shuffle=True):
     AUTO = tf.data.experimental.AUTOTUNE
-    # file_pattern = os.path.join(train_dir, '*.tfrec')
-    # ds = tf.data.Dataset.list_files(file_pattern, shuffle=True)
-    gcs_pattern = f'gs://rangle/tfrecords.zip/{data_dir}/*.tfrec'
-    ds = tf.data.Dataset.list_files(gcs_pattern, shuffle=True)
+    if remote:
+        gcs_pattern = f'gs://rangle/tfrecords.zip/{data_dir}/*.tfrec'
+        ds = tf.data.Dataset.list_files(gcs_pattern, shuffle=shuffle)
+    else:
+        file_pattern = os.path.join(data_dir, '*.tfrec')
+        ds = tf.data.Dataset.list_files(file_pattern, shuffle=shuffle)
+        
     ds = ds.interleave(tf.data.TFRecordDataset,
                        cycle_length=10,
                        block_length=1,
                        num_parallel_calls=AUTO)
     ds = ds.map(lambda record: parse_record(record), num_parallel_calls=AUTO)
     ds = ds.cache()
-    ds = ds.shuffle(10000).repeat()
+    if shuffle:
+        ds = ds.shuffle(10000).repeat()
     ds = ds.map(lambda img_id, img, height, width, areas, bboxes, keypoints: prepro(img, height, width, keypoints, input_shape, output_shape))
     ds = ds.batch(batch_size).prefetch(AUTO)
 

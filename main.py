@@ -60,7 +60,7 @@ weights_path = f'./models/{model_name}.h5'
 model.save_weights(weights_path)
 
 #%%
-model.load_weights(f'./models/{model_name}.h5', by_name=True)
+model.load_weights(f'./models/all_tpu_simple.h5', by_name=True)
 y_pred = model.predict(X_train)
 #%%
 def visualize(x, y, pred):

@@ -26,3 +26,28 @@ SIGMA = np.array([
     0.035, 
     0.035
 ])
+NAMES = [
+    "Nose", 
+    "Left eye", 
+    "Right eye", 
+    "Left ear",
+    "Right ear",
+    "Left shoulder",
+    "Right shoulder",
+    "Left elbow",
+    "Right elbow",
+    "Left wrist",
+    "Right wrist",
+    "Left hip",
+    "Right hip",
+    "Left knee",
+    "Right knee",
+    "Left ankle",
+    "Right ankle",
+    "Left big toe",
+    "Left small toe",
+    "Left heel",
+    "Right big toe",
+    "Right small toe",
+    "Right heel",
+]
