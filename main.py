@@ -46,9 +46,11 @@ def create_model(cfg, spe):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-c', '--cfg', default="./configs/local.yaml")
+parser.add_argument('-t', '--tpu', default=False)
 args, unknown = parser.parse_known_args()
 
 cfg = DictToObject(yaml.safe_load(open(args.cfg)))
+cfg.TPU = args.tpu
 
 train_dataset = load_ds(cfg.DATASET.TRAIN_DIR, cfg.TRAIN.BATCH_SIZE, cfg.DATASET.INPUT_SHAPE, cfg.DATASET.OUTPUT_SHAPE)
 val_dataset = load_ds(cfg.DATASET.VAL_DIR, cfg.VAL.BATCH_SIZE, cfg.DATASET.INPUT_SHAPE, cfg.DATASET.OUTPUT_SHAPE)
