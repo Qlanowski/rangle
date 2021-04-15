@@ -1,0 +1,24 @@
+MODEL:
+  NAME: 'SimpleBaseline'
+  SAVE_NAME: "SimpleBaseline_simple_test"
+
+TRAIN:
+  BATCH_SIZE: 2
+  EPOCHS: 2
+  WARMUP_EPOCHS: 5
+  WARMUP_FACTOR: 0.1
+  LR: 0.00025
+  LR_SCHEDULE: 'warmup_cosine_decay'
+
+VAL:
+  BATCH_SIZE: 2
+
+TPU: false
+
+DATASET:
+  INPUT_SHAPE: [224, 224, 3]
+  OUTPUT_SHAPE: [56, 56, 23]
+  TRAIN_DIR: 'train_test'
+  TRAIN_SIZE: 10
+  VAL_DIR: 'val_test'
+  VAL_SIZE: 5

@@ -4,6 +4,7 @@ import os
 import cv2
 import matplotlib.pyplot as plt
 import tensorflow as tf
+from PIL import Image
 
 import utils.predictions as pu
 from nets.simple_baseline import SimpleBaseline
@@ -31,6 +32,15 @@ def plot_heatmap(ax, img, hm, idx):
     ax.imshow(h_img[:, :, 0], cmap=plt.cm.viridis, alpha=0.5)
     ax.set_title(NAMES[idx], fontsize=12, color='black')
 
+def plot_original_image(img, pred_hm):
+    pred_kp = pu.get_preds(pred_hm, img.shape)
+    plt.axis('off')
+    plt.imshow(img, interpolation='bilinear')
+    for k in range(pred_kp.shape[0]):
+        plt.scatter(pred_kp[k][0], pred_kp[k][1], s=10, c='red', marker='o')
+
+    plt.show()
+
 def plot_image(img, pred_hm):
     pred_kp = pu.get_preds(pred_hm, img.shape)
     fig, axs = plt.subplots(3, 8, figsize=(15, 10))
@@ -48,8 +58,11 @@ def plot_image(img, pred_hm):
     fig.subplots_adjust(wspace=0.1, hspace=0.1)
     plt.show()
 
-def load_images(dir_name):
-    files = os.listdir(dir_name)
+def load_images(dir_name,count=-1):
+    if count==-1:
+        files = os.listdir(dir_name)
+    else:
+        files = os.listdir(dir_name)[:count]
     load_img = lambda path: tf.keras.preprocessing.image.load_img(
         path, grayscale=False, color_mode='rgb', target_size=(224, 224),
         interpolation='nearest'
@@ -57,4 +70,12 @@ def load_images(dir_name):
     imgs = [np.array(load_img(os.path.join(dir_name, file))) for file in files]
     imgs = np.array(imgs)
     return imgs/255.
+
+def load_original_images(dir_name,count=-1):
+    if count==-1:
+        files = os.listdir(dir_name)
+    else:
+        files = os.listdir(dir_name)[:count]
+    imgs = [np.array(Image.open(os.path.join(dir_name, file))) for file in files]
+    return imgs
     

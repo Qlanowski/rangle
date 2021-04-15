@@ -18,28 +18,17 @@ from tfds_loader import load_ds, get_dataset_iterator
 import utils.predictions as pu
 import utils.plots as pl
 # %%
-train_dir = 'train'
-val_dir = 'val'
-batch_size = 32
-
-# %%
-train_dataset = load_ds(train_dir, batch_size,
-                        INPUT_SHAPE, OUTPUT_SHAPE, False)
-val_dataset = load_ds(val_dir, batch_size, INPUT_SHAPE,
-                      OUTPUT_SHAPE, False, False)
-
-val_iter = get_dataset_iterator(val_dataset)
-
-model = SimpleBaseline(INPUT_SHAPE)
-model.load_weights(f'./models/all_tpu_simple.h5', by_name=True)
-# %%
-# for i, (img, _) in enumerate(val_iter):
-
-imgs = pl.load_images('runners')
+dir_img ="train_img"
+imgs = pl.load_images(dir_img,93)
+original_imgs = pl.load_original_images(dir_img,93)
 
 model = SimpleBaseline(INPUT_SHAPE)
 model.load_weights(f'./models/all_tpu_simple.h5', by_name=True)
 pred_hm = model.predict(imgs)
 
-for img, hm in zip(imgs,pred_hm):
-    pl.plot_image(img, hm)
+i=0
+for img, org_img, hm in zip(imgs, original_imgs, pred_hm):
+    i+=1
+    if i>91:
+        pl.plot_original_image(org_img, hm)
+        pl.plot_image(img, hm)

@@ -7,72 +7,81 @@ import tensorflow as tf
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
+import yaml
+import pickle
 
-
-from utils.const import SIGMA, INPUT_SHAPE,OUTPUT_SHAPE
+from utils.const import SIGMA, INPUT_SHAPE, OUTPUT_SHAPE
+from utils.dictToObject import DictToObject
 import load_data as ld
 from nets.simple_baseline import SimpleBaseline
 from lr_schedules import WarmupCosineDecay, WarmupPiecewise
 import cost_functions as cf
 from tfds_loader import load_ds
-# %%
-# if len(sys.argv) - 1 > 0:
-#   model_name = sys.argv[0]
-# else:
-model_name = "200_simple"
-print(model_name)
 
-train_dir =  'train'
-val_dir =  'val'
-batch_size = 32
+def create_model(cfg, spe):
+  if cfg.MODEL.NAME == 'SimpleBaseline':
+    model = SimpleBaseline(cfg.DATASET.INPUT_SHAPE)
+  
+  lr = cfg.TRAIN.LR * cfg.TRAIN.BATCH_SIZE / 32
 
-
-
-# X_train, anns = ld.load_dataset(val_dir, val_ann, val_count)
-# y_train = ld.generate_heatmaps(anns, OUTPUT_SHAPE)
-train_dataset = load_ds(train_dir, batch_size, INPUT_SHAPE, OUTPUT_SHAPE)
-train_size = len(os.listdir(train_dir))
-val_dataset = load_ds(val_dir, batch_size, INPUT_SHAPE, OUTPUT_SHAPE)
-val_size = len(os.listdir(val_dir))
+  lr_schedule = WarmupCosineDecay(
+              initial_learning_rate=lr,
+              decay_steps=cfg.TRAIN.EPOCHS * spe,
+              warmup_steps=cfg.TRAIN.WARMUP_EPOCHS * spe,
+              warmup_factor=cfg.TRAIN.WARMUP_FACTOR)
+              
+  model.compile(optimizer=tf.keras.optimizers.Adam(lr_schedule), loss=cf.mse)
+  return model
 
 # %%
-model = SimpleBaseline(INPUT_SHAPE)
+if len(sys.argv) > 1:
+    cfg = DictToObject(yaml.safe_load(open(sys.argv[1])))
+else:
+    cfg =  DictToObject(yaml.safe_load(open("./configs/local.yaml")))
 
-# %%
-WARMUP_EPOCHS = 5
-WARMUP_FACTOR = 0.1
-EPOCHS = 20
-BATCH_SIZE = 64
-LR = 0.00025
-spe = int(np.ceil(train_size / BATCH_SIZE))
 
-lr = LR * BATCH_SIZE / 32
-lr_schedule = WarmupCosineDecay(
-            initial_learning_rate=lr,
-            decay_steps=EPOCHS * spe,
-            warmup_steps=WARMUP_EPOCHS * spe,
-            warmup_factor=WARMUP_FACTOR)
-            
-model.compile(optimizer=tf.keras.optimizers.Adam(lr_schedule), loss=cf.mse)
-model.fit(train_dataset, epochs=EPOCHS, verbose=1, validation_data=val_dataset, steps_per_epoch=spe)
+train_dataset = load_ds(cfg.DATASET.TRAIN_DIR, cfg.TRAIN.BATCH_SIZE, cfg.DATASET.INPUT_SHAPE, cfg.DATASET.OUTPUT_SHAPE)
+val_dataset = load_ds(cfg.DATASET.VAL_DIR, cfg.VAL.BATCH_SIZE, cfg.DATASET.INPUT_SHAPE, cfg.DATASET.OUTPUT_SHAPE)
+
+spe = int(np.ceil(cfg.DATASET.TRAIN_SIZE / cfg.TRAIN.BATCH_SIZE))
+val_spe = int(np.ceil(cfg.DATASET.VAL_SIZE / cfg.VAL.BATCH_SIZE))
+if cfg.TPU:
+  resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu='')
+  tf.config.experimental_connect_to_cluster(resolver)
+  # This is the TPU initialization code that has to be at the beginning.
+  tf.tpu.experimental.initialize_tpu_system(resolver)
+  print("All devices: ", tf.config.list_logical_devices('TPU'))
+
+  strategy = tf.distribute.TPUStrategy(resolver)
+  with strategy.scope():
+    model = create_model(cfg, spe)
+else:
+  model = create_model(cfg, spe)
 # %%
-weights_path = f'./models/{model_name}.h5'
+model.summary()
+# %%
+history = model.fit(train_dataset, epochs=cfg.TRAIN.EPOCHS, verbose=1, validation_data=val_dataset, validation_steps=val_spe, steps_per_epoch=spe)
+# %%
+with open(f'./models/{cfg.MODEL.SAVE_NAME}.history', 'wb') as file_pi:
+        pickle.dump(history.history, file_pi)
+
+weights_path = f'./models/{cfg.MODEL.SAVE_NAME}.h5'
 model.save_weights(weights_path)
 
 #%%
-model.load_weights(f'./models/all_tpu_simple.h5', by_name=True)
-y_pred = model.predict(X_train)
-#%%
-def visualize(x, y, pred):
-  j=7
-  plt.imshow(x)
-  plt.show()
-  plt.imshow(y[:,:,j])
-  plt.show()
-  plt.imshow(pred[:,:,j])
-  plt.show()
-i=4
-visualize(X_train[i], y_train[i], y_pred[i])
+# model.load_weights(f'./models/all_tpu_simple.h5', by_name=True)
+# y_pred = model.predict(X_train)
+# #%%
+# def visualize(x, y, pred):
+#   j=7
+#   plt.imshow(x)
+#   plt.show()
+#   plt.imshow(y[:,:,j])
+#   plt.show()
+#   plt.imshow(pred[:,:,j])
+#   plt.show()
+# i=4
+# visualize(X_train[i], y_train[i], y_pred[i])
 
 
 # %%
