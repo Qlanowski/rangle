@@ -9,6 +9,7 @@ import cv2
 import matplotlib.pyplot as plt
 import yaml
 import pickle
+import argparse
 
 from utils.const import SIGMA, INPUT_SHAPE, OUTPUT_SHAPE
 from utils.dictToObject import DictToObject
@@ -17,6 +18,15 @@ from nets.simple_baseline import SimpleBaseline
 from lr_schedules import WarmupCosineDecay, WarmupPiecewise
 import cost_functions as cf
 from tfds_loader import load_ds
+
+def display_training_curves(training, validation, title):
+  fig, ax = plt.subplots()
+  ax.plot(training)
+  ax.plot(validation)
+  ax.set_title('model '+ title)
+  ax.set_ylabel(title)
+  ax.set_xlabel('epoch')
+  ax.legend(['training', 'validation'])
 
 def create_model(cfg, spe):
   if cfg.MODEL.NAME == 'SimpleBaseline':
@@ -33,12 +43,12 @@ def create_model(cfg, spe):
   model.compile(optimizer=tf.keras.optimizers.Adam(lr_schedule), loss=cf.mse)
   return model
 
-# %%
-if len(sys.argv) > 1:
-    cfg = DictToObject(yaml.safe_load(open(sys.argv[1])))
-else:
-    cfg =  DictToObject(yaml.safe_load(open("./configs/local.yaml")))
 
+parser = argparse.ArgumentParser()
+parser.add_argument('-c', '--cfg', default="./configs/local.yaml")
+args, unknown = parser.parse_known_args()
+
+cfg = DictToObject(yaml.safe_load(open(args.cfg)))
 
 train_dataset = load_ds(cfg.DATASET.TRAIN_DIR, cfg.TRAIN.BATCH_SIZE, cfg.DATASET.INPUT_SHAPE, cfg.DATASET.OUTPUT_SHAPE)
 val_dataset = load_ds(cfg.DATASET.VAL_DIR, cfg.VAL.BATCH_SIZE, cfg.DATASET.INPUT_SHAPE, cfg.DATASET.OUTPUT_SHAPE)
@@ -57,16 +67,19 @@ if cfg.TPU:
     model = create_model(cfg, spe)
 else:
   model = create_model(cfg, spe)
-# %%
+
 model.summary()
-# %%
+
 history = model.fit(train_dataset, epochs=cfg.TRAIN.EPOCHS, verbose=1, validation_data=val_dataset, validation_steps=val_spe, steps_per_epoch=spe)
-# %%
+
 with open(f'./models/{cfg.MODEL.SAVE_NAME}.history', 'wb') as file_pi:
         pickle.dump(history.history, file_pi)
 
 weights_path = f'./models/{cfg.MODEL.SAVE_NAME}.h5'
 model.save_weights(weights_path)
+
+#%%
+display_training_curves(history.history['loss'], history.history['val_loss'], 'loss')
 
 #%%
 # model.load_weights(f'./models/all_tpu_simple.h5', by_name=True)
