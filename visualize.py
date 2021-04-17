@@ -19,7 +19,7 @@ import utils.predictions as pu
 import utils.plots as pl
 # %%
 dir_img ="train_img"
-imgs = pl.load_images(dir_img,93)
+imgs = pl.load_images(dir_img, 93)
 original_imgs = pl.load_original_images(dir_img,93)
 
 model = SimpleBaseline(INPUT_SHAPE)
