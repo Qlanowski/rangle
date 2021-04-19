@@ -16,11 +16,12 @@ def assess_oks(dataset, model, name):
     headers.extend(NAMES)
     rows = []
     skipped = 0
-    for batch in val_dataset:
+    for batch in dataset:
         batch_pred_hm = model.predict(batch[1])
         for i, pred_hm in enumerate(batch_pred_hm):
             # img_id, img, height, width, areas, kp, hm
             img_id = batch[0][i]
+            img = batch[1][i]
             height = batch[2][i]
             width = batch[3][i]
             area = batch[4][i][0]
@@ -30,6 +31,8 @@ def assess_oks(dataset, model, name):
                 skipped += 1
                 continue
 
+            # pl.plot_image(img, pred_hm)
+
             pred_kp = pu.get_preds(pred_hm, (height, width))
 
             visible = kp_gt[:, -1] > 0
@@ -38,7 +41,6 @@ def assess_oks(dataset, model, name):
             gt = tf.cast(kp_gt[:, 0:2], tf.float64)
             squared = (pred_kp - gt)**2
             d_square = tf.math.reduce_sum(squared, axis=1)
-            area_square = area ** 2
             divider = tf.cast(SIGMA**2 * 2 * area, dtype=tf.float64)
             exps_inside = -1 * d_square/divider
             exps = tf.math.exp(exps_inside)
