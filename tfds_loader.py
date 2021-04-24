@@ -38,11 +38,35 @@ def generate_heatmap(kp, input_shape, output_shape):
     valid_mask = tf.reshape(valid, [1, valid.shape[-1]])
     return heatmap*valid_mask
 
+def generate_heatmap_many_people(kp, input_shape, output_shape):
+    SIGMA = 2 * output_shape[0] / 64
+    # SIGMA = 100
+    x = [i for i in range(output_shape[1])]
+    y = [i for i in range(output_shape[0])]
+    xx, yy = tf.meshgrid(x, y)
+    xx = tf.reshape(tf.dtypes.cast(xx, tf.float32), (*output_shape[:2], 1))
+    yy = tf.reshape(tf.dtypes.cast(yy, tf.float32), (*output_shape[:2], 1))
+
+    x = tf.floor(tf.reshape(kp[:, :, 0], [-1, 1, 1, output_shape[-1]])
+                 / input_shape[1] * output_shape[1] + 0.5)
+    y = tf.floor(tf.reshape(kp[:, :, 1], [-1, 1, 1, output_shape[-1]])
+                 / input_shape[0] * output_shape[0] + 0.5)
+
+    heatmap = tf.exp(-(((xx - x) / SIGMA) ** 2) / 2 - (
+        ((yy - y) / SIGMA) ** 2) / 2) * 255.
+
+    heatmap = tf.math.reduce_sum(heatmap, axis=0)
+
+    kp_visible = tf.math.reduce_sum(kp, axis=0)
+    valid = tf.cast(kp_visible[:, -1] > 0, tf.float32)
+    valid_mask = tf.reshape(valid, [1, valid.shape[-1]])
+    return heatmap * valid_mask
+
 
 def prepro(img, height, width, kp, input_shape, output_shape):
     img = tf.cast(img, tf.float32)
     kp = tf.cast(kp, tf.float32)
-    heatmap = generate_heatmap(kp[0], [height, width], output_shape)
+    heatmap = generate_heatmap_many_people(kp, [height, width], output_shape)
     img = tf.image.resize(img, (input_shape[0], input_shape[1]))
     return img/255., heatmap
 
@@ -75,6 +99,9 @@ def parse_record(record):
     bboxes = tf.reshape(tf.sparse.to_dense(rec['bboxes']), [-1, 4])
     keypoints = tf.reshape(tf.sparse.to_dense(rec['keypoints']), [-1, 23, 3])
     return img_id, img, height, width, areas, bboxes, keypoints
+
+# def crop(img, height, width, keypoints, cfg):
+
 
 
 def single_augmentation(img_id, img, height, width, areas, bboxes, keypoints, cfg):
