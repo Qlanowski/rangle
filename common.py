@@ -24,9 +24,9 @@ def create_model(cfg):
   model.compile(optimizer=tf.keras.optimizers.Adam(lr_schedule), loss=cf.mse)
   return model
 
-def get_config(): 
+def get_config(name='local'): 
   parser = argparse.ArgumentParser()
-  parser.add_argument('-c', '--cfg', default="./configs/local.yaml")
+  parser.add_argument('-c', '--cfg', default=f"./configs/{name}.yaml")
   parser.add_argument('-t', '--tpu', default=False)
   args, unknown = parser.parse_known_args()
   cfg = DictToObject(yaml.safe_load(open(args.cfg)))
