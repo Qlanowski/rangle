@@ -110,7 +110,7 @@ def load_ds(data_dir, batch_size, input_shape, output_shape, augmentation=False,
     ds = ds.cache()
     if shuffle:
         ds = ds.shuffle(10000)
-    ds.repeat()
+    ds = ds.repeat()
 
     if augmentation:
         ds = ds.map(lambda img_id, img, height, width, areas, bboxes, keypoints: single_augmentation(
