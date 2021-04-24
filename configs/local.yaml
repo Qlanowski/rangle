@@ -21,3 +21,5 @@ DATASET:
   VAL_DIR: 'val_test'
   VAL_SIZE: 5
   FLIP_PROB: 0.5
+  CONTRAST_PROB: 0.5
+  HUE_PROB: 0.5

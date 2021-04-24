@@ -78,6 +78,7 @@ def parse_record(record):
 
 
 def single_augmentation(img_id, img, height, width, areas, bboxes, keypoints, cfg):
+    seed=(1,2)
     if cfg.DATASET.FLIP_PROB > 0 and tf.random.uniform([]) <= cfg.DATASET.FLIP_PROB:
         img = tf.image.flip_left_right(img)
         x = keypoints[:,:,0]
@@ -86,6 +87,12 @@ def single_augmentation(img_id, img, height, width, areas, bboxes, keypoints, cf
         
         keypoints = tf.concat([x, keypoints[:,:,1:]], axis=-1)
         keypoints = tf.gather(keypoints, indices=[0,2,1,4,3,6,5,8,7,10,9,12,11,14,13,16,15,20,21,22,17,18,19], axis=1)
+
+    if cfg.DATASET.CONTRAST_PROB > 0 and tf.random.uniform([]) <= cfg.DATASET.CONTRAST_PROB: 
+        img = tf.image.stateless_random_contrast(img, lower=0.1, upper=0.9, seed=seed)
+
+    if cfg.DATASET.HUE_PROB > 0 and tf.random.uniform([]) <= cfg.DATASET.HUE_PROB: 
+        img = tf.image.stateless_random_hue(img, 0.2, seed)
 
     return img_id, img, height, width, areas, bboxes, keypoints
 
@@ -107,10 +114,10 @@ def load_ds(data_dir, batch_size, input_shape, output_shape, augmentation=False,
 
     if augmentation:
         ds = ds.map(lambda img_id, img, height, width, areas, bboxes, keypoints: single_augmentation(
-            img_id, img, height, width, areas, bboxes, keypoints, cfg))
+            img_id, img, height, width, areas, bboxes, keypoints, cfg), num_parallel_calls=AUTO)
 
     ds = ds.map(lambda img_id, img, height, width, areas, bboxes, keypoints: prepro(
-        img, height, width, keypoints, input_shape, output_shape))
+        img, height, width, keypoints, input_shape, output_shape), num_parallel_calls=AUTO)
 
     ds = ds.batch(batch_size).prefetch(AUTO)
 
