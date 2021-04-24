@@ -2,7 +2,7 @@ import tensorflow as tf
 import argparse
 import yaml
 import numpy as np
-
+from pathlib import Path
 
 from nets.simple_baseline import SimpleBaseline
 from lr_schedules import WarmupCosineDecay
@@ -33,6 +33,9 @@ def get_config():
   cfg.TPU = args.tpu
   cfg.SPE = int(np.ceil(cfg.DATASET.TRAIN_SIZE / cfg.TRAIN.BATCH_SIZE))
   cfg.VAL_SPE = int(np.ceil(cfg.DATASET.VAL_SIZE / cfg.VAL.BATCH_SIZE))
+
+  Path(f"./models/{cfg.MODEL.SAVE_NAME}").mkdir(parents=True, exist_ok=True)
+
   return cfg
 
 def get_strategy(tpu):
