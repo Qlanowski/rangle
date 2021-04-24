@@ -36,11 +36,18 @@ else:
 
 model.summary()
 
+model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+    filepath=f'./models/{cfg.MODEL.SAVE_NAME}/model.h5',
+    save_weights_only=True,
+    monitor='val_loss',
+    mode='min',
+    save_best_only=True)
+
 history = model.fit(train_dataset, epochs=cfg.TRAIN.EPOCHS, verbose=1,
-                    validation_data=val_dataset, validation_steps=cfg.VAL_SPE, steps_per_epoch=cfg.SPE)
+                    validation_data=val_dataset, 
+                    validation_steps=cfg.VAL_SPE, 
+                    steps_per_epoch=cfg.SPE,
+                    callbacks=[model_checkpoint_callback])
 
 with open(f'./models/{cfg.MODEL.SAVE_NAME}/training.history', 'wb') as file_pi:
     pickle.dump(history.history, file_pi)
-
-weights_path = f'./models/{cfg.MODEL.SAVE_NAME}/model.h5'
-model.save_weights(weights_path)

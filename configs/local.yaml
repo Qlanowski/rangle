@@ -1,6 +1,6 @@
 MODEL:
   NAME: 'SimpleBaseline'
-  SAVE_NAME: "SimpleBaseline_simple_test"
+  SAVE_NAME: "SimpleBaseline_local"
 
 TRAIN:
   BATCH_SIZE: 2
