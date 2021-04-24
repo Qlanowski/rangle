@@ -18,8 +18,7 @@ from common import create_model, get_config, get_strategy
 from lr_schedules import WarmupPiecewise
 from tfds_loader import load_ds
 
-cfg = get_strategy()
-
+cfg = get_config()
 strategy = get_strategy(cfg.TPU)
 
 train_dataset = load_ds(cfg.DATASET.TRAIN_DIR, cfg.TRAIN.BATCH_SIZE, cfg.DATASET.INPUT_SHAPE, cfg.DATASET.OUTPUT_SHAPE)
