@@ -1,0 +1,22 @@
+MODEL:
+  NAME: 'SimpleBaseline'
+  SAVE_NAME: "SimpleBaseline_quick"
+
+TRAIN:
+  BATCH_SIZE: 256
+  EPOCHS: 20
+  WARMUP_EPOCHS: 5
+  WARMUP_FACTOR: 0.1
+  LR: 0.00025
+  LR_SCHEDULE: 'warmup_cosine_decay'
+
+VAL:
+  BATCH_SIZE: 256
+
+DATASET:
+  INPUT_SHAPE: [224, 224, 3]
+  OUTPUT_SHAPE: [56, 56, 23]
+  TRAIN_DIR: 'train_test'
+  TRAIN_SIZE: 11065
+  VAL_DIR: 'val_test'
+  VAL_SIZE: 443
