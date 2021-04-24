@@ -20,3 +20,4 @@ DATASET:
   TRAIN_SIZE: 10
   VAL_DIR: 'val_test'
   VAL_SIZE: 5
+  FLIP_PROB: 0.5
