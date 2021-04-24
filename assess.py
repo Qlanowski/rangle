@@ -1,4 +1,4 @@
-#%%
+# %%
 import tensorflow as tf
 import pickle
 import numpy as np
@@ -11,8 +11,16 @@ import utils.predictions as pu
 from utils.const import NAMES, SIGMA
 from tfds_loader import load_plain_ds, load_ds
 
+
+def calculate_oks(exps, visibility):
+    exps_all = exps * visibility
+    exps_sum = tf.math.reduce_sum(exps_all)
+    visible_num = tf.math.reduce_sum(visibility)
+    return exps_sum/visible_num
+
+
 def assess_oks(dataset, model, name):
-    headers = ['img_id', 'OKS']
+    headers = ['img_id', 'OKS', 'OKS_org']
     headers.extend(NAMES)
     rows = []
     skipped = 0
@@ -36,7 +44,10 @@ def assess_oks(dataset, model, name):
             pred_kp = pu.get_preds(pred_hm, (height, width))
 
             visible = kp_gt[:, -1] > 0
-            visibility = tf.cast(visible, dtype=tf.float64)
+            visibility_all = tf.cast(visible, dtype=tf.float64)
+            body_kps = tf.constant(np.concatenate(
+                (np.ones(17), np.zeros(6)), axis=0), dtype=tf.float64)
+            visibility_body = visibility_all * body_kps
 
             gt = tf.cast(kp_gt[:, 0:2], tf.float64)
             squared = (pred_kp - gt)**2
@@ -44,31 +55,34 @@ def assess_oks(dataset, model, name):
             divider = tf.cast(SIGMA**2 * 2 * area, dtype=tf.float64)
             exps_inside = -1 * d_square/divider
             exps = tf.math.exp(exps_inside)
-            exps *= visibility
-            exps_sum = tf.math.reduce_sum(exps)
-            visible_num = tf.math.reduce_sum(visibility)
-            oks = exps_sum/visible_num
 
-            elements_exps = exps - tf.cast(tf.math.logical_not(visible),dtype=tf.float64)  # -1 if not visible
-            row = [img_id.numpy(), oks.numpy()]
+            oks = calculate_oks(exps, visibility_all)
+            oks_org = calculate_oks(exps, visibility_body)
+
+            elements_exps = exps - \
+                tf.cast(tf.math.logical_not(visible),
+                        dtype=tf.float64)  # -1 if not visible
+            row = [img_id.numpy(), oks.numpy(), oks_org.numpy()]
             row.extend(elements_exps.numpy())
             rows.append(row)
 
-    df = pd.DataFrame(rows,columns=headers)
+    df = pd.DataFrame(rows, columns=headers)
     df = df.replace(-1, np.nan)
-    
+
     return df
 
+
 def calculate_ap(column, ap):
-        count = column.shape[0]
-        return (column >= ap).sum()/count
+    count = column.shape[0]
+    return (column >= ap).sum()/count
+
 
 def calculate_aps_dataframe(oks_df):
-    prec_headers = ["AP", "OKS"]
+    prec_headers = ["AP", "OKS", "OKS_org"]
 
     prec_headers.extend(NAMES)
 
-    ap_df= pd.DataFrame(columns=prec_headers)
+    ap_df = pd.DataFrame(columns=prec_headers)
     aps = np.linspace(0, .95, 20)
     aps_strings = ['mAP=(0.5-0.95)']
     aps_strings.extend(["AP=%.2f" % ap for ap in aps])
@@ -79,33 +93,34 @@ def calculate_aps_dataframe(oks_df):
         if i == 0:
             continue
         valid = oks_df[column].dropna()
-        ap_values = [ calculate_ap(valid, ap) for ap in aps ]
+        ap_values = [calculate_ap(valid, ap) for ap in aps]
         mAPs_steps = ap_values[10:]
         mAP = sum(mAPs_steps)/len(mAPs_steps)
         col = [mAP]
         col.extend(ap_values)
         ap_df[column] = col
-    
+
     return ap_df
+
 
 def assess_dataset(dataset, model, name):
     oks_df = assess_oks(dataset, model, name)
-    oks_df.to_csv(f"./models/{cfg.MODEL.SAVE_NAME}/{name}_oks.csv", index=False)
+    oks_df.to_csv(
+        f"./models/{cfg.MODEL.SAVE_NAME}/{name}_oks.csv", index=False)
 
     ap_df = calculate_aps_dataframe(oks_df)
     ap_df.to_csv(f"./models/{cfg.MODEL.SAVE_NAME}/{name}_aps.csv", index=False)
-    
+
 
 def display_training_curves(training, validation, title):
-        fig, ax = plt.subplots()
-        plt.plot(training)
-        plt.plot(validation)
-        plt.title('model '+ title)
-        plt.ylabel(title)
-        plt.xlabel('epoch')
-        plt.legend(['training', 'validation'])
-        plt.savefig("test.svg")
-        return plt
+    fig, ax = plt.subplots()
+    plt.plot(training)
+    plt.plot(validation)
+    plt.title('model ' + title)
+    plt.ylabel(title)
+    plt.xlabel('epoch')
+    plt.legend(['training', 'validation'])
+    return plt
 
 
 def draw_history(cfg):
@@ -114,12 +129,13 @@ def draw_history(cfg):
     plt = display_training_curves(history['loss'], history['val_loss'], 'loss')
     plt.savefig(f'./models/{cfg.MODEL.SAVE_NAME}/loss.svg')
 
-    
-#%%
+
+# %%
 cfg = get_config()
 strategy = get_strategy(cfg.TPU)
 
-train_dataset = load_plain_ds(cfg.DATASET.TRAIN_DIR, cfg.TRAIN.BATCH_SIZE, cfg.DATASET.INPUT_SHAPE, cfg.DATASET.OUTPUT_SHAPE)
+train_dataset = load_plain_ds(cfg.DATASET.TRAIN_DIR, cfg.TRAIN.BATCH_SIZE,
+                              cfg.DATASET.INPUT_SHAPE, cfg.DATASET.OUTPUT_SHAPE)
 val_dataset = load_plain_ds(cfg.DATASET.VAL_DIR, cfg.VAL.BATCH_SIZE,
                             cfg.DATASET.INPUT_SHAPE, cfg.DATASET.OUTPUT_SHAPE)
 
@@ -130,8 +146,9 @@ if strategy != None:
             f'./models/{cfg.MODEL.SAVE_NAME}/model.h5', by_name=True)
 else:
     model = create_model(cfg)
-    model.load_weights(f'./models/{cfg.MODEL.SAVE_NAME}/model.h5', by_name=True)
-#%%
+    model.load_weights(
+        f'./models/{cfg.MODEL.SAVE_NAME}/model.h5', by_name=True)
+# %%
 assess_dataset(val_dataset, model, "val")
 assess_dataset(train_dataset, model, "train")
 draw_history(cfg)
