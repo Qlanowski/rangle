@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 import cv2
 
 from utils.const import SIGMA, INPUT_SHAPE, OUTPUT_SHAPE
-
+from common import get_config
+import utils.plots as pl
 # %%
 
 
@@ -76,14 +77,23 @@ def parse_record(record):
     return img_id, img, height, width, areas, bboxes, keypoints
 
 
-def load_ds(data_dir, batch_size, input_shape, output_shape, remote=True, shuffle=True):
+def single_augmentation(img_id, img, height, width, areas, bboxes, keypoints, cfg):
+    if cfg.DATASET.FLIP_PROB > 0 and tf.random.uniform([]) <= cfg.DATASET.FLIP_PROB:
+        img = tf.image.flip_left_right(img)
+        x = keypoints[:,:,0]
+        x = tf.cast(width, dtype=tf.int64) - x
+        x = tf.reshape(x, [-1, 23, 1])
+        
+        keypoints = tf.concat([x, keypoints[:,:,1:]], axis=-1)
+        keypoints = tf.gather(keypoints, indices=[0,2,1,4,3,6,5,8,7,10,9,12,11,14,13,16,15,20,21,22,17,18,19], axis=1)
+
+    return img_id, img, height, width, areas, bboxes, keypoints
+
+
+def load_ds(data_dir, batch_size, input_shape, output_shape, augmentation=False, shuffle=True, cfg=None):
     AUTO = tf.data.experimental.AUTOTUNE
-    if remote:
-        gcs_pattern = f'gs://rangle/tfrecords.zip/{data_dir}/*.tfrec'
-        ds = tf.data.Dataset.list_files(gcs_pattern, shuffle=shuffle)
-    else:
-        file_pattern = os.path.join(data_dir, '*.tfrec')
-        ds = tf.data.Dataset.list_files(file_pattern, shuffle=shuffle)
+    gcs_pattern = f'gs://rangle/tfrecords.zip/{data_dir}/*.tfrec'
+    ds = tf.data.Dataset.list_files(gcs_pattern, shuffle=shuffle)
 
     ds = ds.interleave(tf.data.TFRecordDataset,
                        cycle_length=10,
@@ -92,9 +102,16 @@ def load_ds(data_dir, batch_size, input_shape, output_shape, remote=True, shuffl
     ds = ds.map(lambda record: parse_record(record), num_parallel_calls=AUTO)
     ds = ds.cache()
     if shuffle:
-        ds = ds.shuffle(10000).repeat()
+        ds = ds.shuffle(10000)
+    ds.repeat()
+
+    if augmentation:
+        ds = ds.map(lambda img_id, img, height, width, areas, bboxes, keypoints: single_augmentation(
+            img_id, img, height, width, areas, bboxes, keypoints, cfg))
+
     ds = ds.map(lambda img_id, img, height, width, areas, bboxes, keypoints: prepro(
         img, height, width, keypoints, input_shape, output_shape))
+
     ds = ds.batch(batch_size).prefetch(AUTO)
 
     return ds
@@ -129,21 +146,34 @@ def to_image(img):
 
 if __name__ == "__main__":
     tf.random.set_seed(0)
-    train_dir = 'train'
-    val_dir = 'val'
-    batch_size = 32
-    ds = load_ds(val_dir, batch_size, INPUT_SHAPE, OUTPUT_SHAPE)
 
-    for i, (imgs, heatmaps) in enumerate(ds):
-        for b in range(batch_size):
-            img = imgs[b]
-            heatmap = heatmaps[b]
-            h = tf.image.resize(
-                to_image(heatmap[:, :, i]), (img.shape[0], img.shape[1]))
-            c = img + h*0.01
-            imgplot = plt.imshow(c)
-            plt.show()
-            imgplot = plt.imshow(heatmap[:, :, i])
-            plt.show()
+    cfg = get_config()
+
+    train_dataset = load_ds(cfg.DATASET.TRAIN_DIR, cfg.TRAIN.BATCH_SIZE,
+                            cfg.DATASET.INPUT_SHAPE, cfg.DATASET.OUTPUT_SHAPE,
+                            augmentation=True, shuffle=False, cfg=cfg)
+
+
+    dataset = get_dataset_iterator(train_dataset)
+    for pair in dataset:
+        img = pair[0]
+        hm = pair[1]
+        pl.plot_image(img, hm)
+    # train_dir = 'train'
+    # val_dir = 'val'
+    # batch_size = 32
+    # ds = load_ds(val_dir, batch_size, INPUT_SHAPE, OUTPUT_SHAPE)
+
+    # for i, (imgs, heatmaps) in enumerate(ds):
+    #     for b in range(batch_size):
+    #         img = imgs[b]
+    #         heatmap = heatmaps[b]
+    #         h = tf.image.resize(
+    #             to_image(heatmap[:, :, i]), (img.shape[0], img.shape[1]))
+    #         c = img + h*0.01
+    #         imgplot = plt.imshow(c)
+    #         plt.show()
+    #         imgplot = plt.imshow(heatmap[:, :, i])
+    #         plt.show()
 
 # %%

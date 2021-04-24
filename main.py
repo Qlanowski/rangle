@@ -23,9 +23,9 @@ cfg = get_config()
 strategy = get_strategy(cfg.TPU)
 
 train_dataset = load_ds(cfg.DATASET.TRAIN_DIR, cfg.TRAIN.BATCH_SIZE,
-                        cfg.DATASET.INPUT_SHAPE, cfg.DATASET.OUTPUT_SHAPE)
+                        cfg.DATASET.INPUT_SHAPE, cfg.DATASET.OUTPUT_SHAPE, augmentation=True, cfg=cfg)
 val_dataset = load_ds(cfg.DATASET.VAL_DIR, cfg.VAL.BATCH_SIZE,
-                      cfg.DATASET.INPUT_SHAPE, cfg.DATASET.OUTPUT_SHAPE)
+                      cfg.DATASET.INPUT_SHAPE, cfg.DATASET.OUTPUT_SHAPE, augmentation=False, cfg=cfg)
 
 
 if strategy != None:
