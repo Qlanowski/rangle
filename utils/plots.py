@@ -58,6 +58,25 @@ def plot_image(img, pred_hm):
     fig.subplots_adjust(wspace=0.1, hspace=0.1)
     plt.show()
 
+def plot_points_and_image(img, pred_kp):
+    fig, axs = plt.subplots(3, 8, figsize=(15, 10))
+    for j, ax in enumerate(axs.ravel()):
+        j-=1
+        if j==-1:
+            ax.axis('off')
+            ax.imshow(img, interpolation='bilinear')
+            for k in range(pred_kp.shape[0]):
+                ax.scatter(pred_kp[k][0], pred_kp[k][1], s=20, c='red', marker='o')
+            ax.set_title("Predictions", fontsize=16, color='black')
+        else:
+            ax.axis('off')
+            ax.imshow(img, interpolation='bilinear')
+            ax.scatter(pred_kp[j][0], pred_kp[j][1], s=20, c='red', marker='o')
+            ax.set_title(NAMES[j], fontsize=16, color='black')
+    fig.tight_layout()
+    fig.subplots_adjust(wspace=0.1, hspace=0.1)
+    plt.show()
+
 def load_images(dir_name,count=-1):
     if count==-1:
         files = os.listdir(dir_name)
