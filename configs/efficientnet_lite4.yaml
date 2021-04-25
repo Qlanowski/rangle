@@ -1,7 +1,7 @@
 MODEL:
   NAME: 'EfficientNetLite'
-  SAVE_NAME: "EfficientNet_lite0"
-  SIZE: 0
+  SAVE_NAME: "EfficientNet_lite4"
+  SIZE: 4
 
 TRAIN:
   BATCH_SIZE: 256
