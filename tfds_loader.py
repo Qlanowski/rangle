@@ -99,7 +99,7 @@ def parse_record(record):
     areas = tf.sparse.to_dense(rec['areas'])
     bboxes = tf.reshape(tf.sparse.to_dense(rec['bboxes']), [-1, 4])
     keypoints = tf.reshape(tf.sparse.to_dense(rec['keypoints']), [-1, 23, 3])
-    return img_id, img, height, width, areas, bboxes, keypoints
+    return img_id, img, height, width, areas, keypoints
 
 
 def people_edge_points(kp):
@@ -212,7 +212,7 @@ def load_ds(data_dir, batch_size, input_shape, output_shape, augmentation=False,
     ds = ds.repeat()
 
     if augmentation:
-        ds = ds.map(lambda img_id, img, height, width, areas, bboxes, keypoints: single_augmentation(
+        ds = ds.map(lambda img_id, img, height, width, areas, keypoints: single_augmentation(
             img_id, img, height, width, areas, keypoints, cfg), num_parallel_calls=AUTO)
 
     ds = ds.map(lambda img_id, img, height, width, areas, keypoints: prepro(
@@ -247,9 +247,9 @@ def load_plain_ds(data_dir, batch_size, input_shape, output_shape):
                        num_parallel_calls=AUTO)
     ds = ds.map(lambda record: parse_record(record), num_parallel_calls=AUTO)
     ds = ds.cache()
-    ds = ds.map(lambda img_id, img, height, width, areas, bboxes, keypoints: assess_prepro(
+    ds = ds.map(lambda img_id, img, height, width, areas, keypoints: assess_prepro(
         img_id, img, height, width, areas, keypoints, input_shape, output_shape))
-    # ds = ds.map(lambda img_id, img, height, width, areas, bboxes, keypoints: prepro(img, height, width, keypoints, input_shape, output_shape))
+
     ds = ds.batch(batch_size).prefetch(AUTO)
 
     return ds
@@ -286,15 +286,11 @@ if __name__ == "__main__":
     #     height = pair[2]
     #     width = pair[3]
     #     area = pair[4]
-    #     keypoints = pair[6]
+    #     keypoints = pair[5]
     #     img, keypoints, height, width = crop(img, height, width, keypoints)
-    #     height = img.shape[0]
-    #     width = img.shape[1]
-    #     img, hm = prepro(img, height, width, keypoints,
-    #                      cfg.DATASET.INPUT_SHAPE, cfg.DATASET.OUTPUT_SHAPE)
-    #     pl.plot_image(img.numpy(), hm.numpy())
-        # person = keypoints.numpy()[0,:,0:2]
-        # pl.plot_points_and_image(img.numpy(), person)
+        
+    #     person = keypoints.numpy()[0,:,0:2]
+    #     pl.plot_points_and_image(img.numpy(), person)
 
     # train_dataset = load_plain_ds(cfg.DATASET.TRAIN_DIR, cfg.TRAIN.BATCH_SIZE,
     #                         cfg.DATASET.INPUT_SHAPE, cfg.DATASET.OUTPUT_SHAPE)
