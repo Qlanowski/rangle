@@ -131,11 +131,11 @@ def crop_bbox(height, width, x_tl, y_tl, x_br, y_br):
 
     w_half = tf.random.uniform([], minval=min_w_half, maxval=w_max, dtype=t)
     h_half = tf.random.uniform([], minval=min_h_half, maxval=h_max, dtype=t)
-    edge_half = tf.math.maximum(w_half, h_half)
-    x_tl = tf.math.maximum(x - edge_half, 0)
-    y_tl = tf.math.maximum(y - edge_half, 0)
-    x_br = tf.math.minimum(x + edge_half, w)
-    y_br = tf.math.minimum(y + edge_half, h)
+    # edge_half = tf.math.maximum(w_half, h_half)
+    x_tl = tf.math.maximum(x - w_half, 0)
+    y_tl = tf.math.maximum(y - h_half, 0)
+    x_br = tf.math.minimum(x + w_half, w)
+    y_br = tf.math.minimum(y + h_half, h)
 
     return x_tl, y_tl, x_br, y_br
 
@@ -191,7 +191,7 @@ def single_augmentation(img_id, img, height, width, areas, keypoints, cfg):
     if cfg.DATASET.HUE_PROB > 0 and tf.random.uniform([]) <= cfg.DATASET.HUE_PROB:
         img = tf.image.stateless_random_hue(img, 0.5, seed)
 
-    img, keypoints, height, width, = crop(img, height, width, keypoints)
+    img, keypoints, height, width = crop(img, height, width, keypoints)
 
     return img_id, img, height, width, areas, keypoints
 
