@@ -5,6 +5,7 @@ import numpy as np
 from pathlib import Path
 
 from nets.simple_baseline import SimpleBaseline
+from nets.efficient_net_lite import EfficientNetLite
 from lr_schedules import WarmupCosineDecay
 from utils.dictToObject import DictToObject
 import cost_functions as cf
@@ -12,6 +13,9 @@ import cost_functions as cf
 def create_model(cfg):
   if cfg.MODEL.NAME == 'SimpleBaseline':
     model = SimpleBaseline(cfg.DATASET.INPUT_SHAPE)
+  elif cfg.MODEL.NAME == 'EfficientNetLite':
+    model = EfficientNetLite(cfg.MODEL.SIZE)
+
   
   lr = cfg.TRAIN.LR * cfg.TRAIN.BATCH_SIZE / 32
 

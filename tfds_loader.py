@@ -189,7 +189,7 @@ def single_augmentation(img_id, img, height, width, areas, keypoints, cfg):
             img, lower=0.1, upper=0.9, seed=seed)
 
     if cfg.DATASET.HUE_PROB > 0 and tf.random.uniform([]) <= cfg.DATASET.HUE_PROB:
-        img = tf.image.stateless_random_hue(img, 0.2, seed)
+        img = tf.image.stateless_random_hue(img, 0.5, seed)
 
     img, keypoints, height, width, = crop(img, height, width, keypoints)
 
