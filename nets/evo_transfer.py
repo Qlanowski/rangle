@@ -20,5 +20,7 @@ def EvoPose2D_transfer(size, unfreeze):
         name='final_conv')(x)
     model =  Model(backbone.input, x, name='sb_{}'.format(f'EvoPose2D_{size}_transfer'))
 
-    for l in models.layers[:-13]:
+    for l in model.layers[:-13]:
         l.trainable = False
+    
+    return model
