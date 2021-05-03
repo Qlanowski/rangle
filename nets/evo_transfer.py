@@ -5,7 +5,7 @@ from tensorflow.keras.regularizers import l2
 from tensorflow.keras import layers, Model
 
 
-def EvoPose2D_transfer(size):
+def EvoPose2D_transfer(size, unfreeze):
     regularizer = l2(1e-5)
 
     backbone = tf.keras.models.load_model(f'evo/evopose2d_{size}_f32.h5')
@@ -18,4 +18,7 @@ def EvoPose2D_transfer(size):
         use_bias=True,
         kernel_regularizer=regularizer,
         name='final_conv')(x)
-    return Model(backbone.input, x, name='sb_{}'.format(f'EvoPose2D_{size}_transfer'))
+    model =  Model(backbone.input, x, name='sb_{}'.format(f'EvoPose2D_{size}_transfer'))
+
+    for l in models.layers[:-13]:
+        l.trainable = False
