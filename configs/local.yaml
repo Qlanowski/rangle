@@ -9,6 +9,7 @@ MODEL:
   NAME: 'EvoPose2D_transfer'
   SAVE_NAME: "EvoPose2D_XS_transfer"
   SIZE: XS
+  UNFREEZE: 13
 
 
 TRAIN:

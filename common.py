@@ -17,7 +17,7 @@ def create_model(cfg):
   elif cfg.MODEL.NAME == 'EfficientNetLite':
     model = EfficientNetLite(cfg.MODEL.SIZE)
   elif cfg.MODEL.NAME == 'EvoPose2D_transfer':
-    model = EvoPose2D_transfer(cfg.MODEL.SIZE)
+    model = EvoPose2D_transfer(cfg.MODEL.SIZE, cfg.MODEL.UNFREEZE)
 
   
   lr = cfg.TRAIN.LR * cfg.TRAIN.BATCH_SIZE / 32
