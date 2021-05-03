@@ -273,10 +273,13 @@ if __name__ == "__main__":
                             augmentation=True, shuffle=False, cfg=cfg)
 
     dataset = get_dataset_iterator(train_dataset)
+    i=0
     for pair in dataset:
         img = pair[0]
         hm = pair[1]
-        pl.plot_image(img, hm)
+        i = i +1
+        print(i)
+        # pl.plot_image(img, hm)
 
     # dataset = load_basic_ds(cfg.DATASET.TRAIN_DIR)
 

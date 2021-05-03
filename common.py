@@ -6,6 +6,7 @@ from pathlib import Path
 
 from nets.simple_baseline import SimpleBaseline
 from nets.efficient_net_lite import EfficientNetLite
+from nets.evo_transfer import EvoPose2D_transfer
 from lr_schedules import WarmupCosineDecay
 from utils.dictToObject import DictToObject
 import cost_functions as cf
@@ -15,6 +16,8 @@ def create_model(cfg):
     model = SimpleBaseline(cfg.DATASET.INPUT_SHAPE)
   elif cfg.MODEL.NAME == 'EfficientNetLite':
     model = EfficientNetLite(cfg.MODEL.SIZE)
+  elif cfg.MODEL.NAME == 'EvoPose2D_transfer':
+    model = EvoPose2D_transfer(cfg.MODEL.SIZE)
 
   
   lr = cfg.TRAIN.LR * cfg.TRAIN.BATCH_SIZE / 32
@@ -27,6 +30,14 @@ def create_model(cfg):
               
   model.compile(optimizer=tf.keras.optimizers.Adam(lr_schedule), loss=cf.mse)
   return model
+
+def get_basic_config(name='local'): 
+  parser = argparse.ArgumentParser()
+  parser.add_argument('-c', '--cfg', default=f"./configs/{name}.yaml")
+  args, unknown = parser.parse_known_args()
+  cfg = DictToObject(yaml.safe_load(open(args.cfg)))
+
+  return cfg
 
 def get_config(name='local'): 
   parser = argparse.ArgumentParser()

@@ -1,7 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras import layers, Model
-from tensorflow.keras.applications import ResNet50, ResNet101, ResNet152
 
 from .simple_baseline import add_regularization
 
@@ -30,4 +29,4 @@ def EfficientNetLite(size):
         use_bias=True,
         kernel_regularizer=regularizer,
         name='final_conv')(x)
-    return Model(backbone.input, x, name='sb_{}'.format('Resnet50'))
+    return Model(backbone.input, x, name='sb_{}'.format('EfficientNetLite'))

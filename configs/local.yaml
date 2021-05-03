@@ -1,10 +1,14 @@
 # MODEL:
 #   NAME: 'SimpleBaseline'
 #   SAVE_NAME: "SimpleBaseline_local"
+# MODEL:
+#   NAME: 'EfficientNetLite'
+#   SAVE_NAME: "EfficientNet_lite0_local"
+#   SIZE: 0
 MODEL:
-  NAME: 'EfficientNetLite'
-  SAVE_NAME: "EfficientNet_lite0_local"
-  SIZE: 0
+  NAME: 'EvoPose2D_transfer'
+  SAVE_NAME: "EvoPose2D_XS_transfer"
+  SIZE: XS
 
 
 TRAIN:
@@ -19,8 +23,8 @@ VAL:
   BATCH_SIZE: 2
 
 DATASET:
-  INPUT_SHAPE: [224, 224, 3]
-  OUTPUT_SHAPE: [56, 56, 23]
+  INPUT_SHAPE: [256, 192, 3]
+  OUTPUT_SHAPE: [64, 48, 23]
   TRAIN_DIR: 'train_test'
   TRAIN_SIZE: 10
   VAL_DIR: 'val_test'
